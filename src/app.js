@@ -137,7 +137,8 @@ app.post("/status", async (req, res) => {
   const { user } = req.headers;
   if (!user) return res.sendStatus(404);
   try {
-    const resp = db.collection("participants").findOne({ name: user });
+    const resp = await db.collection("participants").findOne({ name: user });
+    console.log(resp);
     if (!resp) return res.sendStatus(404);
     if (resp) {
       await db.collection("participants").updateOne(
