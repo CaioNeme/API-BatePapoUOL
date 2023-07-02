@@ -4,7 +4,6 @@ import { MongoClient } from "mongodb";
 import dotenv from "dotenv";
 import dayjs from "dayjs";
 import joi from "joi";
-import e from "express";
 dotenv.config();
 
 const PORT = 5000;
@@ -36,9 +35,9 @@ app.post("/participants", async (req, res) => {
   }
 
   try {
-    const resp = await db.collection("participantes").findOne({ name: name });
+    const resp = await db.collection("participants").findOne({ name: name });
     if (resp) return res.sendStatus(409);
-    await db.collection("participantes").insertOne({
+    await db.collection("participants").insertOne({
       name: name,
       lastStatus: Date.now(),
     });
@@ -56,7 +55,7 @@ app.post("/participants", async (req, res) => {
 });
 
 app.get("/participants", (req, res) => {
-  db.collection("participantes")
+  db.collection("participants")
     .find()
     .toArray()
     .then((participantes) => res.send(participantes))
@@ -80,7 +79,7 @@ app.post("/messages", async (req, res) => {
     return res.sendStatus(422);
   }
   try {
-    const resp = await db.collection("participantes").findOne({ name: user });
+    const resp = await db.collection("participants").findOne({ name: user });
     if (resp) {
       await db.collection("messages").insertOne({
         from: user,
@@ -101,10 +100,7 @@ app.post("/messages", async (req, res) => {
 app.get("/messages", (req, res) => {
   const { user } = req.headers;
   const { limit } = req.query;
-
-  if (limit <= 0) {
-    return res.sendStatus(422);
-  } else if (limit > 0) {
+  if (limit > 0) {
     db.collection("messages")
       .find({
         $or: [
@@ -132,17 +128,18 @@ app.get("/messages", (req, res) => {
       .toArray()
       .then((messages) => res.send(messages))
       .catch((err) => res.status(500).send(err.message));
+  } else {
+    return res.sendStatus(422);
   }
 });
 
 app.post("/status", async (req, res) => {
   const { user } = req.headers;
-  console.log(user);
   if (!user) return res.sendStatus(404);
   try {
-    const resp = db.collection("participantes").findOne({ name: user });
+    const resp = db.collection("participants").findOne({ name: user });
     if (resp) {
-      await db.collection("participantes").updateOne(
+      await db.collection("participants").updateOne(
         { name: user },
         {
           $set: {
@@ -161,7 +158,7 @@ app.post("/status", async (req, res) => {
 setInterval(async () => {
   try {
     const resp = await db
-      .collection("participantes")
+      .collection("participants")
       .find({ lastStatus: { $lte: Date.now() - 10000 } })
       .toArray();
 
@@ -174,7 +171,7 @@ setInterval(async () => {
         time: dayjs(Date.now()).format("HH:mm:ss"),
       });
 
-      db.collection("participantes").deleteOne({
+      db.collection("participants").deleteOne({
         name: user.name,
       });
     });
