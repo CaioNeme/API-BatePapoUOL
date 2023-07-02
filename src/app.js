@@ -148,8 +148,7 @@ app.post("/status", async (req, res) => {
         }
       );
       return res.sendStatus(200);
-    }
-    if (!resp) return res.sendStatus(404);
+    } else if (!resp) return res.sendStatus(404);
   } catch (err) {
     return res.status(500).send(err.message);
   }
@@ -166,7 +165,7 @@ setInterval(async () => {
       await db.collection("messages").insertOne({
         from: user.name,
         to: "Todos",
-        text: `sai da sala...`,
+        text: "sai da sala...",
         type: "status",
         time: dayjs(Date.now()).format("HH:mm:ss"),
       });
