@@ -4,6 +4,7 @@ import { MongoClient } from "mongodb";
 import dotenv from "dotenv";
 import dayjs from "dayjs";
 import joi from "joi";
+import e from "express";
 dotenv.config();
 
 const PORT = 5000;
@@ -98,11 +99,44 @@ app.post("/messages", async (req, res) => {
 });
 
 app.get("/messages", (req, res) => {
-  db.collection("messages")
-    .find()
-    .toArray()
-    .then((messages) => res.send(messages))
-    .catch((err) => res.status(500).send(err.message));
+  const { user } = req.headers;
+  const { limit } = req.query;
+
+  if (limit <= 0) {
+    return res.sendStatus(422);
+  } else if (limit > 0) {
+    db.collection("messages")
+      .find({
+        $or: [
+          { to: "Todos" },
+          { to: user },
+          { from: user },
+          { type: "message" },
+        ],
+      })
+      .toArray()
+      .then((messages) => {
+        res.send(messages.slice(limit * -1));
+      })
+      .catch((err) => res.status(500).send(err.message));
+  } else if (!limit) {
+    db.collection("messages")
+      .find({
+        $or: [
+          { to: "Todos" },
+          { to: user },
+          { from: user },
+          { type: "message" },
+        ],
+      })
+      .toArray()
+      .then((messages) => res.send(messages))
+      .catch((err) => res.status(500).send(err.message));
+  }
+});
+
+app.post("/status", (req, res) => {
+  res.send("Estamos trabalhando nessa função ainda");
 });
 
 app.listen(PORT, () => console.log(`O servidor está online na porta ${PORT}`));
