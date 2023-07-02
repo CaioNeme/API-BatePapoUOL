@@ -50,7 +50,7 @@ app.post("/participants", async (req, res) => {
       time: time,
     });
     return res.sendStatus(201);
-  } catch {
+  } catch (err) {
     return res.status(500).send(err);
   }
 });
@@ -93,7 +93,7 @@ app.post("/messages", async (req, res) => {
     } else {
       return res.sendStatus(422);
     }
-  } catch {
+  } catch (err) {
     return res.status(500).send(err);
   }
 });
@@ -139,10 +139,7 @@ app.post("/status", async (req, res) => {
   const { user } = req.headers;
   if (!user) return res.sendStatus(404);
   try {
-    const resp = db
-      .collection("participantes")
-      .findOne({ name: user })
-      .toArray();
+    const resp = db.collection("participantes").findOne({ name: user });
     if (resp) {
       await db.collection("participantes").updateOne(
         { _id: resp._id },
@@ -155,10 +152,34 @@ app.post("/status", async (req, res) => {
       return res.sendStatus(200);
     }
     if (!resp) return res.sendStatus(404);
-  } catch {
-    return res.status(500).send(error.message);
+  } catch (err) {
+    return res.status(500).send(err.message);
   }
-  res.send("Estamos trabalhando nessa função ainda");
 });
+
+setInterval(async () => {
+  try {
+    const resp = await db
+      .collection("participantes")
+      .find({ lastStatus: { $lte: Date.now() - 10000 } })
+      .toArray();
+
+    resp.forEach(async (user) => {
+      await db.collection("messages").insertOne({
+        from: user.name,
+        to: "Todos",
+        text: `sai da sala...`,
+        type: "status",
+        time: dayjs(Date.now()).format("HH:mm:ss"),
+      });
+
+      db.collection("participantes").deleteOne({
+        name: resp.name,
+      });
+    });
+  } catch (error) {
+    console.log(error.message);
+  }
+}, 15000);
 
 app.listen(PORT, () => console.log(`O servidor está online na porta ${PORT}`));
