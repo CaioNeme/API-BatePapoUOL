@@ -137,12 +137,13 @@ app.get("/messages", (req, res) => {
 
 app.post("/status", async (req, res) => {
   const { user } = req.headers;
+  console.log(user);
   if (!user) return res.sendStatus(404);
   try {
     const resp = db.collection("participantes").findOne({ name: user });
     if (resp) {
       await db.collection("participantes").updateOne(
-        { _id: resp._id },
+        { name: user },
         {
           $set: {
             lastStatus: Date.now(),
@@ -174,7 +175,7 @@ setInterval(async () => {
       });
 
       db.collection("participantes").deleteOne({
-        name: resp.name,
+        name: user.name,
       });
     });
   } catch (error) {
