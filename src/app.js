@@ -138,6 +138,7 @@ app.post("/status", async (req, res) => {
   if (!user) return res.sendStatus(404);
   try {
     const resp = db.collection("participants").findOne({ name: user });
+    if (!resp) return res.sendStatus(404);
     if (resp) {
       await db.collection("participants").updateOne(
         { name: user },
@@ -148,7 +149,7 @@ app.post("/status", async (req, res) => {
         }
       );
       return res.sendStatus(200);
-    } else if (!resp) return res.sendStatus(404);
+    }
   } catch (err) {
     return res.status(500).send(err.message);
   }
