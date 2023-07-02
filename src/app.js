@@ -135,7 +135,29 @@ app.get("/messages", (req, res) => {
   }
 });
 
-app.post("/status", (req, res) => {
+app.post("/status", async (req, res) => {
+  const { user } = req.headers;
+  if (!user) return res.sendStatus(404);
+  try {
+    const resp = db
+      .collection("participantes")
+      .findOne({ name: user })
+      .toArray();
+    if (resp) {
+      await db.collection("participantes").updateOne(
+        { _id: resp._id },
+        {
+          $set: {
+            lastStatus: Date.now(),
+          },
+        }
+      );
+      return res.sendStatus(200);
+    }
+    if (!resp) return res.sendStatus(404);
+  } catch {
+    return res.status(500).send(error.message);
+  }
   res.send("Estamos trabalhando nessa função ainda");
 });
 
